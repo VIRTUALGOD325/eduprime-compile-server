@@ -67,11 +67,13 @@ app.post("/api/compile", async (req, res) => {
     await ensureCore();
     const fqbn = board || "arduino:avr:uno";
     const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "eduprime-"));
-    const sketchPath = path.join(tmpDir, "sketch.ino");
+    const sketchDir = path.join(tmpDir, "sketch");
+    await fs.mkdir(sketchDir);
+    const sketchPath = path.join(sketchDir, "sketch.ino");
     await fs.writeFile(sketchPath, code);
 
     try {
-      await run(`${CLI} compile --fqbn ${fqbn} "${tmpDir}"`);
+      await run(`${CLI} compile --fqbn ${fqbn} "${sketchDir}"`);
       res.json({ success: true, message: "Compilation successful!" });
     } finally {
       await fs.rm(tmpDir, { recursive: true, force: true });
@@ -90,14 +92,16 @@ app.post("/api/compile-hex", async (req, res) => {
     await ensureCore();
     const fqbn = board || "arduino:avr:uno";
     const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "eduprime-"));
-    const sketchPath = path.join(tmpDir, "sketch.ino");
+    const sketchDir = path.join(tmpDir, "sketch");
+    await fs.mkdir(sketchDir);
+    const sketchPath = path.join(sketchDir, "sketch.ino");
     await fs.writeFile(sketchPath, code);
 
     try {
-      await run(`${CLI} compile --fqbn ${fqbn} "${tmpDir}"`);
+      await run(`${CLI} compile --fqbn ${fqbn} "${sketchDir}"`);
 
       // Find the compiled hex file
-      const buildDir = path.join(tmpDir, "build", fqbn.replace(/:/g, "."));
+      const buildDir = path.join(sketchDir, "build", fqbn.replace(/:/g, "."));
       const hexPath = path.join(buildDir, "sketch.ino.hex");
 
       try {
