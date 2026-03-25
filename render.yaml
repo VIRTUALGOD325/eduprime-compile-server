@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: eduprime-compile
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: PORT
+        value: 3100
+    healthCheckPath: /health
