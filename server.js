@@ -97,11 +97,11 @@ app.post("/api/compile-hex", async (req, res) => {
     const sketchPath = path.join(sketchDir, "sketch.ino");
     await fs.writeFile(sketchPath, code);
 
+    const buildDir = path.join(tmpDir, "build");
     try {
-      await run(`${CLI} compile --fqbn ${fqbn} "${sketchDir}"`);
+      await run(`${CLI} compile --fqbn ${fqbn} --output-dir "${buildDir}" "${sketchDir}"`);
 
       // Find the compiled hex file
-      const buildDir = path.join(sketchDir, "build", fqbn.replace(/:/g, "."));
       const hexPath = path.join(buildDir, "sketch.ino.hex");
 
       try {
@@ -109,15 +109,12 @@ app.post("/api/compile-hex", async (req, res) => {
         res.json({ success: true, hex, message: "Compilation successful!" });
       } catch {
         // Fallback: search for any .hex file in the build directory
-        const buildExists = await fs.stat(buildDir).catch(() => null);
-        if (buildExists) {
-          const files = await fs.readdir(buildDir);
-          const hexFile = files.find((f) => f.endsWith(".hex"));
-          if (hexFile) {
-            const hex = await fs.readFile(path.join(buildDir, hexFile), "utf-8");
-            res.json({ success: true, hex, message: "Compilation successful!" });
-            return;
-          }
+        const files = await fs.readdir(buildDir);
+        const hexFile = files.find((f) => f.endsWith(".hex"));
+        if (hexFile) {
+          const hex = await fs.readFile(path.join(buildDir, hexFile), "utf-8");
+          res.json({ success: true, hex, message: "Compilation successful!" });
+          return;
         }
         throw new Error("Compiled hex file not found");
       }
